@@ -1,10 +1,21 @@
 import os
+import threading
 import aiohttp
 import discord
 from discord import app_commands
 from discord.ext import commands
+from flask import Flask
 
-# ==================== Bot Setup ====================
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return "Free Fire Discord Bot is Alive!"
+
+def run_flask():
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
+
 intents = discord.Intents.default()
 intents.message_content = True
 intents.guilds = True
@@ -15,20 +26,16 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 @bot.event
 async def on_ready():
     print(f"✅ বট সফলভাবে লগইন করেছে: {bot.user.name}")
-    print("ফ্রি ফায়ার কাস্টম এপিআই ডিবাগিং বট প্রস্তুত!")
     try:
         synced = await bot.tree.sync()
-        print(f"সফলভাবে {len(synced)} টি স্ল্যাশ কমান্ড সিন্স করা হয়েছে।")
+        print(f"ਸফলভাবে {len(synced)} টি স্ল্যাশ কমান্ড সিন্স করা হয়েছে।")
     except Exception as e:
         print(f"⚠️ কমান্ড সিন্স করতে সমস্যা হয়েছে: {e}")
 
-# ==================== PLAYER LOOKUP COMMAND ====================
 @bot.tree.command(name="player", description="Search Free Fire real player info via custom API")
 @app_commands.describe(uid="Player UID")
 async def player_slash(interaction: discord.Interaction, uid: str):
     await interaction.response.send_message(f"🔍 Fetching live details for UID: `{uid}` ...", ephemeral=True)
-    
-    # আপনার কাস্টম এপিআই এন্ডপয়েন্ট
     target_url = f"https://auraffxserverinfocheckerapi.onrender.com/api/player?uid={uid}"
     
     headers = {
@@ -41,16 +48,12 @@ async def player_slash(interaction: discord.Interaction, uid: str):
                 if resp.status == 200:
                     try:
                         result = await resp.json()
-                        # এটি রেন্ডার লগ-এ আসল JSON ডেটা প্রিন্ট করবে
-                        print(f"API Response for UID {uid}: {result}")
                     except:
                         result = {"success": False}
                 else:
                     result = {"success": False}
 
-        # এপিআই থেকে ডাটা আসলে তা ডিকোড করার চেষ্টা
         if result and isinstance(result, dict):
-            # বিভিন্ন সম্ভাব্য কি (Key) চেক করা হচ্ছে
             data = result.get("data", result)
             p_name = data.get("player_name", data.get("name", data.get("nickname", "Unknown Player")))
             p_level = data.get("level", data.get("PlayerLevel", "N/A"))
@@ -75,9 +78,10 @@ async def player_slash(interaction: discord.Interaction, uid: str):
     except Exception as e:
         await interaction.edit_original_response(content=f"❌ Connection Error: `{e}`")
 
-# ==================== Run Bot ====================
-DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
-if DISCORD_TOKEN:
-    bot.run(DISCORD_TOKEN.strip())
-else:
-    print("❌ এরর: DISCORD_TOKEN এনভায়রনমেন্ট ভ্যারিয়েবল সেট করা নেই!")
+if __name__ == "__main__":
+    threading.Thread(target=run_flask).start()
+    DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
+    if DISCORD_TOKEN:
+        bot.run(DISCORD_TOKEN.strip())
+    else:
+        print("❌ এরর: DISCORD_TOKEN এনভায়রনমেন্ট ভ্যারিয়েবল সেট করা নেই!")
