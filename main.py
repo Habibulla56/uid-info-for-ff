@@ -1,14 +1,35 @@
+import os
 import aiohttp
+import discord
+from discord import app_commands
+from discord.ext import commands
 from bs4 import BeautifulSoup
 
-# ==================== REAL PLAYER LOOKUP WITH WEB SCRAPING / API ====================
+# ==================== Bot Setup ====================
+intents = discord.Intents.default()
+intents.message_content = True
+intents.guilds = True
+intents.members = True
+
+bot = commands.Bot(command_prefix="!", intents=intents)
+
+@bot.event
+async def on_ready():
+    print(f"Logged in as {bot.user.name} (ID: {bot.user.id})")
+    try:
+        synced = await bot.tree.sync()
+        print(f"Synced {len(synced)} command(s).")
+    except Exception as e:
+        print(f"Failed to sync commands: {e}")
+
+# ==================== PLAYER LOOKUP COMMAND ====================
 @bot.tree.command(name="player", description="Search Free Fire real player info via live backend")
 @app_commands.describe(uid="Player UID")
 async def player_slash(interaction: discord.Interaction, uid: str):
     await interaction.response.send_message(f"🔍 Fetching live details for UID: `{uid}` ...", ephemeral=True)
     
     # Target live endpoint/website request simulation
-    target_url = f"https://munnatopup.com/api/check?uid={uid}" # Or general lookup endpoint
+    target_url = f"https://munnatopup.com/api/check?uid={uid}"
     
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -44,12 +65,18 @@ async def player_slash(interaction: discord.Interaction, uid: str):
             
             await interaction.edit_original_response(content=None, embed=embed)
         else:
-            # Fallback if direct live backend blocks or returns HTML guard
             embed = discord.Embed(title="⚠️ Live Fetch Notice", color=0xF1C40F)
             embed.add_field(name="UID", value=uid, inline=False)
-            embed.add_field(name="Status", value="Live backend security (Cloudflare/Anti-bot) detected. Direct automated scraping is restricted by the target server.", inline=False)
+            embed.add_field(name="Status", value="Live backend security (Cloudflare/Anti-bot) detected or direct lookup restricted.", inline=False)
             embed.set_footer(text="Please use manual verification or authorized gateway.")
             await interaction.edit_original_response(content=None, embed=embed)
 
     except Exception as e:
         await interaction.edit_original_response(content=f"❌ Connection or Security Block Error: `{e}`")
+
+# ==================== Run Bot ====================
+TOKEN = os.getenv("DISCORD_TOKEN")
+if TOKEN:
+    bot.run(TOKEN.strip())
+else:
+    print("❌ Error: DISCORD_TOKEN environment variable not set!")
