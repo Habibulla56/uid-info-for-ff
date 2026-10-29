@@ -3,12 +3,8 @@ import aiohttp
 import discord
 from discord import app_commands
 from discord.ext import commands
-from bs4 import BeautifulSoup
 
-# ডিসকর্ড বট টোকেন (Render এনভায়রনমেন্ট ভ্যারিয়েবল থেকে রিড করবে)
-DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
-
-# ডিসকর্ড বট ইন্টেন্টস কনফিগারেশন
+# ==================== Bot Setup ====================
 intents = discord.Intents.default()
 intents.message_content = True
 intents.guilds = True
@@ -19,7 +15,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 @bot.event
 async def on_ready():
     print(f"✅ বট সফলভাবে লগইন করেছে: {bot.user.name}")
-    print("ফ্রি ফায়ার ইউআইডি চেকার বট প্রস্তুত!")
+    print("ফ্রি ফায়ার কাস্টম এপিআই বট প্রস্তুত!")
     try:
         synced = await bot.tree.sync()
         print(f"সফলভাবে {len(synced)} টি স্ল্যাশ কমান্ড সিন্স করা হয়েছে।")
@@ -27,17 +23,16 @@ async def on_ready():
         print(f"⚠️ কমান্ড সিন্স করতে সমস্যা হয়েছে: {e}")
 
 # ==================== PLAYER LOOKUP COMMAND ====================
-@bot.tree.command(name="player", description="ফ্রি ফায়ার প্লেয়ারের রিয়েল ইন-গেম তথ্য সার্চ করুন")
-@app_commands.describe(uid="প্লেয়ারের ইউআইডি (UID) লিখুন")
+@bot.tree.command(name="player", description="Search Free Fire real player info via custom API")
+@app_commands.describe(uid="Player UID")
 async def player_slash(interaction: discord.Interaction, uid: str):
-    await interaction.response.send_message(f"🔍 ইউআইডি `{uid}` এর তথ্য খোঁজা হচ্ছে...", ephemeral=True)
+    await interaction.response.send_message(f"🔍 Fetching live details for UID: `{uid}` ...", ephemeral=True)
     
-    # লাইভ ব্যাকএন্ড বা টপআপ সাইট রিকোয়েস্ট লিংক
-    target_url = f"https://munnatopup.com/api/check?uid={uid}"
+    # আপনার দেওয়া কাস্টম এপিআই এন্ডপয়েন্ট
+    target_url = f"https://auraffxserverinfocheckerapi.onrender.com/api/player?uid={uid}"
     
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Referer": "https://munnatopup.com/"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     }
 
     try:
@@ -47,41 +42,37 @@ async def player_slash(interaction: discord.Interaction, uid: str):
                     try:
                         result = await resp.json()
                     except:
-                        text_data = await resp.text()
-                        soup = BeautifulSoup(text_data, 'html.parser')
                         result = {"success": False}
                 else:
                     result = {"success": False}
 
-        # যদি ডাটা সফলভাবে পাওয়া যায়
-        if result.get("success") or isinstance(result, dict) and "player_name" in result:
+        # এপিআই থেকে ডাটা সফলভাবে আসলে
+        if result and (result.get("success") or "player_name" in result or "name" in result or isinstance(result, dict)):
             data = result.get("data", result)
-            p_name = data.get("player_name", data.get("name", "অজানা প্লেয়ার"))
+            p_name = data.get("player_name", data.get("name", "Unknown Player"))
             p_level = data.get("level", "N/A")
             p_likes = data.get("likes", "N/A")
-            p_guild = data.get("guild_name", "নেই")
+            p_guild = data.get("guild_name", data.get("guild", "None"))
             p_region = data.get("region", "BD")
 
-            embed = discord.Embed(title="✅ ফ্রি ফায়ার প্লেয়ার প্রফাইল পাওয়া গেছে!", color=0x00FFCC)
+            embed = discord.Embed(title="✅ Free Fire Player Found (API)", color=0x00FFCC)
             embed.add_field(name="UID", value=uid, inline=False)
-            embed.add_field(name="নাম ও লেভেল", value=f"{p_name} (লেভেল: {p_level} - {p_region})", inline=False)
-            embed.add_field(name="মোট লাইক", value=f"❤️ {p_likes}", inline=False)
-            embed.add_field(name="গিল্ডের নাম", value=p_guild, inline=False)
-            embed.set_footer(text="Habibulla Gaming Security Bot")
+            embed.add_field(name="Name", value=f"{p_name} (Level: {p_level} - {p_region})", inline=False)
+            embed.add_field(name="Likes", value=f"❤️ {p_likes}", inline=False)
+            embed.add_field(name="Guild Name", value=p_guild, inline=False)
+            embed.set_footer(text="AuraFFX API Bot")
             
             await interaction.edit_original_response(content=None, embed=embed)
         else:
-            # ক্লাউডফ্লায়ার বা সিকিউরিটি ব্লক হ্যান্ডেল করার নোটিশ
-            embed = discord.Embed(title="⚠️ লাইভ ডাটা নোটিশ", color=0xF1C40F)
+            embed = discord.Embed(title="⚠️ API Notice", color=0xF1C40F)
             embed.add_field(name="UID", value=uid, inline=False)
-            embed.add_field(name="স্ট্যাটাস", value="টার্গেট সার্ভারে সিকিউরিটি ব্লক (Cloudflare/Anti-bot) রয়েছে, তাই ডাইরেক্ট ফেচ করা যাচ্ছে না।", inline=False)
-            embed.set_footer(text="Habibulla Gaming Security Bot")
+            embed.add_field(name="Status", value="Could not fetch data or invalid UID response from API.", inline=False)
             await interaction.edit_original_response(content=None, embed=embed)
 
     except Exception as e:
-        await interaction.edit_original_response(content=f"❌ কানেকশন বা সিকিউরিটি এরর: `{e}`")
+        await interaction.edit_original_response(content=f"❌ Connection Error: `{e}`")
 
-# বট রান করা
+# ==================== Run Bot ====================
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 if DISCORD_TOKEN:
     bot.run(DISCORD_TOKEN.strip())
