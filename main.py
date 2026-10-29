@@ -82,7 +82,8 @@ async def player_slash(interaction: discord.Interaction, uid: str):
         await interaction.edit_original_response(content=f"❌ কানেকশন বা সিকিউরিটি এরর: `{e}`")
 
 # বট রান করা
-if DISCORD_BOT_TOKEN:
-    bot.run(DISCORD_BOT_TOKEN.strip())
+DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
+if DISCORD_TOKEN:
+    bot.run(DISCORD_TOKEN.strip())
 else:
     print("❌ এরর: DISCORD_TOKEN এনভায়রনমেন্ট ভ্যারিয়েবল সেট করা নেই!")
