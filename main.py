@@ -15,7 +15,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 @bot.event
 async def on_ready():
     print(f"✅ বট সফলভাবে লগইন করেছে: {bot.user.name}")
-    print("ফ্রি ফায়ার কাস্টম এপিআই বট প্রস্তুত!")
+    print("ফ্রি ফায়ার কাস্টম এপিআই ডিবাগিং বট প্রস্তুত!")
     try:
         synced = await bot.tree.sync()
         print(f"সফলভাবে {len(synced)} টি স্ল্যাশ কমান্ড সিন্স করা হয়েছে।")
@@ -28,7 +28,7 @@ async def on_ready():
 async def player_slash(interaction: discord.Interaction, uid: str):
     await interaction.response.send_message(f"🔍 Fetching live details for UID: `{uid}` ...", ephemeral=True)
     
-    # আপনার দেওয়া কাস্টম এপিআই এন্ডপয়েন্ট
+    # আপনার কাস্টম এপিআই এন্ডপয়েন্ট
     target_url = f"https://auraffxserverinfocheckerapi.onrender.com/api/player?uid={uid}"
     
     headers = {
@@ -41,19 +41,22 @@ async def player_slash(interaction: discord.Interaction, uid: str):
                 if resp.status == 200:
                     try:
                         result = await resp.json()
+                        # এটি রেন্ডার লগ-এ আসল JSON ডেটা প্রিন্ট করবে
+                        print(f"API Response for UID {uid}: {result}")
                     except:
                         result = {"success": False}
                 else:
                     result = {"success": False}
 
-        # এপিআই থেকে ডাটা সফলভাবে আসলে
-        if result and (result.get("success") or "player_name" in result or "name" in result or isinstance(result, dict)):
+        # এপিআই থেকে ডাটা আসলে তা ডিকোড করার চেষ্টা
+        if result and isinstance(result, dict):
+            # বিভিন্ন সম্ভাব্য কি (Key) চেক করা হচ্ছে
             data = result.get("data", result)
-            p_name = data.get("player_name", data.get("name", "Unknown Player"))
-            p_level = data.get("level", "N/A")
-            p_likes = data.get("likes", "N/A")
-            p_guild = data.get("guild_name", data.get("guild", "None"))
-            p_region = data.get("region", "BD")
+            p_name = data.get("player_name", data.get("name", data.get("nickname", "Unknown Player")))
+            p_level = data.get("level", data.get("PlayerLevel", "N/A"))
+            p_likes = data.get("likes", data.get("Likes", "N/A"))
+            p_guild = data.get("guild_name", data.get("guild", data.get("GuildName", "None")))
+            p_region = data.get("region", data.get("Region", "BD"))
 
             embed = discord.Embed(title="✅ Free Fire Player Found (API)", color=0x00FFCC)
             embed.add_field(name="UID", value=uid, inline=False)
@@ -66,7 +69,7 @@ async def player_slash(interaction: discord.Interaction, uid: str):
         else:
             embed = discord.Embed(title="⚠️ API Notice", color=0xF1C40F)
             embed.add_field(name="UID", value=uid, inline=False)
-            embed.add_field(name="Status", value="Could not fetch data or invalid UID response from API.", inline=False)
+            embed.add_field(name="Status", value="Could not fetch data or invalid JSON response from API.", inline=False)
             await interaction.edit_original_response(content=None, embed=embed)
 
     except Exception as e:
