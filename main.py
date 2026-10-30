@@ -1,7 +1,7 @@
 import sys
 import os
 
-# Render এবং লোকাল সার্ভারের জন্য পাইথন পাথ ফিক্সার
+# Render ebong lokal server er jonno python path fixer
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 import threading
@@ -9,24 +9,26 @@ import json
 import discord
 from discord import app_commands
 from discord.ext import commands
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 
-# ব্যাকএন্ড মডিউলগুলো ইমপোর্ট (utilities এবং api ফোল্ডারের নাম ছোট হাতের অক্ষরে ঠিক করা হয়েছে)
+# Backend module import
 from utilities.until import load_accounts
 from api.Account import get_garena_token, get_major_login
 from api.InGame import get_player_personal_show, get_player_stats, search_account_by_keyword
 
-# একাউন্ট লোড করা
+# Account load kora
 accounts = load_accounts()
 
 # ==================== Flask App & API Routes ====================
+# Note: templates folder theke index.html load korar jonno template_folder bole dite paro ba default templates folder use korte paro
 app = Flask(__name__)
 CORS(app)
 
 @app.route('/')
 def home():
-    return "Free Fire Bot & Full Stats API is Alive!"
+    # Ekhane index.html render korbe (shorthand: templates/index.html thakte hobe)
+    return render_template('index.html')
 
 @app.route('/get_player_personal_show', methods=['GET'])
 def get_account_info():
@@ -84,12 +86,12 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 @bot.event
 async def on_ready():
-    print(f"✅ বট সফলভাবে লগইন করেছে: {bot.user.name}")
+    print(f"✅ Bot safolkhabe login koreche: {bot.user.name}")
     try:
         synced = await bot.tree.sync()
-        print(f"সফলভাবে {len(synced)} টি স্ল্যাশ কমান্ড সিন্স করা হয়েছে।")
+        print(f"Safolkhabe {len(synced)} ti slash command sync kora hoyeche.")
     except Exception as e:
-        print(f"⚠️ কমান্ড সিন্স করতে সমস্যা হয়েছে: {e}")
+        print(f"⚠️ Command sync korte somossa hoyeche: {e}")
 
 # ==================== DISCORD PLAYER COMMAND ====================
 @bot.tree.command(name="player", description="Check Free Fire Full Profile Stats via Custom Backend")
@@ -156,4 +158,4 @@ if __name__ == "__main__":
     if DISCORD_TOKEN:
         bot.run(DISCORD_TOKEN.strip())
     else:
-        print("❌ এরর: DISCORD_TOKEN এনভায়রনমেন্ট ভ্যারিয়েবল সেট করা নেই!")
+        print("❌ Error: DISCORD_TOKEN environment variable set kora nei!")
