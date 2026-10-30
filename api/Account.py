@@ -1,6 +1,6 @@
 import requests
 import Proto.compiled.MajorLogin_pb2
-from Utilities.until import encode_protobuf, decode_protobuf
+from utilities.until import encode_protobuf, decode_protobuf
 import json
 from Configuration.APIConfiguration import RELEASEVERSION, DEBUG
 
