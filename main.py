@@ -12,8 +12,8 @@ from discord.ext import commands
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
-# ব্যাকএন্ড মডিউলগুলো ইমপোর্ট
-from Utilities.until import load_accounts
+# ব্যাকএন্ড মডিউলগুলো ইমপোর্ট (utilities ফোল্ডারের নাম ছোট হাতের অক্ষরে ঠিক করা হয়েছে)
+from utilities.until import load_accounts
 from Api.Account import get_garena_token, get_major_login
 from Api.InGame import get_player_personal_show, get_player_stats, search_account_by_keyword
 
