@@ -1,7 +1,7 @@
 import sys
 import os
 
-# Render ebong lokal server er jonno python path fixer
+# Render এবং লোকাল সার্ভারের জন্য পাইথন পাথ ফিক্সার
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 import threading
@@ -12,22 +12,20 @@ from discord.ext import commands
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 
-# Backend module import
+# ব্যাকএন্ড মডিউলগুলো ইমপোর্ট (এখানে Api বড় হাতের রাখা হয়েছে)
 from utilities.until import load_accounts
-from api.Account import get_garena_token, get_major_login
-from api.InGame import get_player_personal_show, get_player_stats, search_account_by_keyword
+from Api.Account import get_garena_token, get_major_login
+from Api.InGame import get_player_personal_show, get_player_stats, search_account_by_keyword
 
-# Account load kora
+# একাউন্ট লোড করা
 accounts = load_accounts()
 
 # ==================== Flask App & API Routes ====================
-# Note: templates folder theke index.html load korar jonno template_folder bole dite paro ba default templates folder use korte paro
 app = Flask(__name__)
 CORS(app)
 
 @app.route('/')
 def home():
-    # Ekhane index.html render korbe (shorthand: templates/index.html thakte hobe)
     return render_template('index.html')
 
 @app.route('/get_player_personal_show', methods=['GET'])
@@ -86,12 +84,12 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 @bot.event
 async def on_ready():
-    print(f"✅ Bot safolkhabe login koreche: {bot.user.name}")
+    print(f"✅ বট সফলভাবে লগইন করেছে: {bot.user.name}")
     try:
         synced = await bot.tree.sync()
-        print(f"Safolkhabe {len(synced)} ti slash command sync kora hoyeche.")
+        print(f"সফলভাবে {len(synced)} টি স্ল্যাশ কমান্ড সিন্স করা হয়েছে।")
     except Exception as e:
-        print(f"⚠️ Command sync korte somossa hoyeche: {e}")
+        print(f"⚠️ কমান্ড সিন্স করতে সমস্যা হয়েছে: {e}")
 
 # ==================== DISCORD PLAYER COMMAND ====================
 @bot.tree.command(name="player", description="Check Free Fire Full Profile Stats via Custom Backend")
@@ -158,4 +156,4 @@ if __name__ == "__main__":
     if DISCORD_TOKEN:
         bot.run(DISCORD_TOKEN.strip())
     else:
-        print("❌ Error: DISCORD_TOKEN environment variable set kora nei!")
+        print("❌ এরর: DISCORD_TOKEN এনভায়রনমেন্ট ভ্যারিয়েবল সেট করা নেই!")
