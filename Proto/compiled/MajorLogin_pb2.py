@@ -12,9 +12,6 @@ from google.protobuf import symbol_database as _symbol_database
 
 _sym_db = _symbol_database.Default()
 
-
-
-
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='MajorLogin.proto',
   package='',
@@ -22,9 +19,6 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   serialized_options=None,
   serialized_pb=_b('\n\x10MajorLogin.proto\"/\n\rMajorLoginReq\x12\x11\n\taccess_token\x18\x01 \x01(\t\x12\x0b\n\x03uid\x18\x02 \x01(\x03\"6\n\rMajorLoginRes\x12\x0f\n\x07serverUrl\x18\x01 \x01(\t\x12\r\n\x05token\x18\x02 \x01(\t\x12\x0c\n\x04\x63ode\x18\x03 \x01(\x05\x62\x06proto3')
 )
-
-
-
 
 _MAJORLOGINREQ = _descriptor.Descriptor(
   name='MajorLoginReq',
@@ -49,10 +43,6 @@ _MAJORLOGINREQ = _descriptor.Descriptor(
       serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
-    _descriptor.ExtensionRangeOptions(),
-    _descriptor.StartEndRangeOptions(),
-    _descriptor.SetRangeOptions(),
-    _descriptor.GetLaunch_base__optionss_base__options = None,
   ],
   is_extension=False,
   lookup_type=[],
@@ -66,7 +56,6 @@ _MAJORLOGINREQ = _descriptor.Descriptor(
   serialized_start=20,
   serialized_end=67,
 )
-
 
 _MAJORLOGINRES = _descriptor.Descriptor(
   name='MajorLoginRes',
@@ -98,10 +87,6 @@ _MAJORLOGINRES = _descriptor.Descriptor(
       serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
-    _descriptor.ExtensionRangeOptions(),
-    _descriptor.StartEndRangeOptions(),
-    _descriptor.SetRangeOptions(),
-    _descriptor.GetLaunch_base__optionss_base__options = None,
   ],
   is_extension=False,
   lookup_type=[],
@@ -121,22 +106,13 @@ DESCRIPTOR.message_types_by_name['MajorLoginRes'] = _MAJORLOGINRES
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 MajorLoginReq = _reflection.GeneratedProtocolMessageType('MajorLoginReq', (_message.Message,), dict(
-  *__dict = {
-    'DESCRIPTOR' : _MAJORLOGINREQ,
-    '__module__' : 'MajorLogin_pb2'
-    # @@protoc_insertion_point(class_scope:MajorLoginReq)
-  }
+    DESCRIPTOR = _MAJORLOGINREQ,
+    __module__ = 'MajorLogin_pb2'
 ))
 _sym_db.RegisterMessage(MajorLoginReq)
 
 MajorLoginRes = _reflection.GeneratedProtocolMessageType('MajorLoginRes', (_message.Message,), dict(
-  *__dict = {
-    'DESCRIPTOR' : _MAJORLOGINRES,
-    '__module__' : 'MajorLogin_pb2'
-    # @@protoc_insertion_point(class_scope:MajorLoginRes)
-  }
+    DESCRIPTOR = _MAJORLOGINRES,
+    __module__ = 'MajorLogin_pb2'
 ))
 _sym_db.RegisterMessage(MajorLoginRes)
-
-
-# @@protoc_insertion_point(module_specialize)
