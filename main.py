@@ -13,6 +13,13 @@ app = Flask(__name__)
 def home():
     return "Free Fire Discord Bot & Profile Stats API is Alive!"
 
+@app.route('/api/player', methods=['GET'])
+def web_player_api():
+    uid = request.args.get('uid')
+    if not uid:
+        return jsonify({"success": False, "error": "UID is required"})
+    return jsonify({"success": True, "uid": uid, "status": "API Endpoint Active"})
+
 def run_flask():
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
@@ -34,11 +41,11 @@ async def on_ready():
     except Exception as e:
         print(f"⚠️ কমান্ড সিন্স করতে সমস্যা হয়েছে: {e}")
 
-# ==================== PROFILE STATS / PLAYER COMMAND ====================
-@bot.tree.command(name="player", description="Check Free Fire Profile Stats, Skins, Ranks, and Account Info")
+# ==================== PLAYER LOOKUP COMMAND ====================
+@bot.tree.command(name="player", description="Check Free Fire Profile Stats and Account Info")
 @app_commands.describe(uid="Player UID")
 async def player_slash(interaction: discord.Interaction, uid: str):
-    await interaction.response.send_message(f"🔍 Fetching profile stats for UID: `{uid}` ...", ephemeral=True)
+    await interaction.response.send_message(f"🔍 Fetching details for UID: `{uid}` ...", ephemeral=True)
     
     target_url = f"https://auraffxserverinfocheckerapi.onrender.com/api/player?uid={uid}"
     
@@ -60,24 +67,24 @@ async def player_slash(interaction: discord.Interaction, uid: str):
         if result and isinstance(result, dict):
             data = result.get("data", result)
             
-            # এরর বা প্লেয়ার না পাওয়া গেলে চেক করা
-            if "error" in result or data.get("success") == false or (isinstance(data, dict) and "error" in data):
+            # এরর চেক
+            if "error" in result or data.get("success") == False or (isinstance(data, dict) and "error" in data):
                 embed = discord.Embed(title="❌ Profile Not Found", color=0xFF0000)
                 embed.add_field(name="UID", value=uid, inline=False)
                 embed.add_field(name="Status", value="This UID is invalid, banned, or not found in the database.", inline=False)
                 await interaction.edit_original_response(content=None, embed=embed)
                 return
 
-            # প্লেয়ারের বেসিক ইনফো এক্সট্রাক্ট করা
-            p_name = data.get("player_name", data.get("name", data.get("nickname", data.get("AccountName", "Unknown"))))
+            # ডাটা এক্সট্রাকশন (নিরাপদভাবে ডিকশনারি ফিল্ড চেক)
+            p_name = data.get("player_name", data.get("name", data.get("nickname", data.get("AccountName"))))
             p_level = data.get("level", data.get("PlayerLevel", data.get("AccountLevel", "N/A")))
             p_likes = data.get("likes", data.get("Likes", data.get("Favorable", "N/A")))
             p_guild = data.get("guild_name", data.get("guild", data.get("GuildName", "None")))
             p_region = data.get("region", data.get("Region", "BD"))
             
-            # এক্সট্রা প্রোফাইল স্ট্যাটস (র‍্যাংক, ব্যাজ বা অন্যান্য ডিটেইলস যদি এপিআই থেকে আসে)
+            # এক্সট্রা গেম স্ট্যাটস (এপিআই সাপোর্ট করলে দেখাবে, না থাকলে N/A দেখাবে)
             p_br_rank = data.get("br_rank", data.get("BRRank", data.get("rank", "N/A")))
-            p_cs_rank = data.get("cs_rank", data.get("CSRank", "N/A")))
+            p_cs_rank = data.get("cs_rank", data.get("CSRank", "N/A"))
             p_create_date = data.get("create_time", data.get("AccountCreateTime", data.get("creation_date", "N/A")))
 
             if not p_name or p_name == "Unknown":
@@ -87,10 +94,10 @@ async def player_slash(interaction: discord.Interaction, uid: str):
                 await interaction.edit_original_response(content=None, embed=embed)
                 return
 
-            # ডিসকর্ড সুন্দর এম্বেড কার্ড তৈরি করা
+            # ডিসকর্ড এম্বেড রেসপন্স
             embed = discord.Embed(title="🎮 Free Fire Player Profile Stats", color=0x00FFCC)
-            embed.add_field(name="👤 Player Name", value=p_name, inline=True)
-            embed.add_field(name="🆔 UID", value=uid, inline=True)
+            embed.add_field(name="👤 Player Name", value=str(p_name), inline=True)
+            embed.add_field(name="🆔 UID", value=str(uid), inline=True)
             embed.add_field(name="⭐ Level", value=str(p_level), inline=True)
             embed.add_field(name="🌍 Region", value=str(p_region), inline=True)
             embed.add_field(name="❤️ Likes", value=str(p_likes), inline=True)
