@@ -1,4 +1,4 @@
 discord.py
-aiohttp
 flask
 flask-cors
+requests
