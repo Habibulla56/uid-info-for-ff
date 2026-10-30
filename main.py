@@ -58,10 +58,9 @@ async def player_slash(interaction: discord.Interaction, uid: str):
                     result = {"success": False}
 
         if result and isinstance(result, dict):
-            # চেক করা যে API আসলেও প্লেয়ারের ডেটা দিয়েছে কি না
             data = result.get("data", result)
             
-            # যদি এপিআই থেকে সরাসরি error বা player না পাওয়ার মেসেজ থাকে
+            # চেক করা যে API আসলেও প্লেয়ারের ডেটা দিয়েছে কি না বা এরর আছে কি না
             if "error" in result or data.get("success") == False or (isinstance(data, dict) and "error" in data):
                 embed = discord.Embed(title="❌ Player Not Found", color=0xFF0000)
                 embed.add_field(name="UID", value=uid, inline=False)
@@ -75,7 +74,6 @@ async def player_slash(interaction: discord.Interaction, uid: str):
             p_guild = data.get("guild_name", data.get("guild", data.get("GuildName", "None")))
             p_region = data.get("region", data.get("Region", "BD"))
 
-            # যদি নাম না পাওয়া যায়
             if not p_name or p_name == "Unknown":
                 embed = discord.Embed(title="❌ Player Not Found", color=0xFF0000)
                 embed.add_field(name="UID", value=uid, inline=False)
@@ -87,3 +85,24 @@ async def player_slash(interaction: discord.Interaction, uid: str):
             embed.add_field(name="UID", value=uid, inline=False)
             embed.add_field(name="Name", value=f"{p_name} (Level: {p_level} - {p_region})", inline=False)
             embed.add_field(name="Likes", value=f"❤️ {p_likes}", inline=False)
+            embed.add_field(name="Guild Name", value=p_guild, inline=False)
+            embed.set_footer(text="AuraFFX API Bot")
+            
+            await interaction.edit_original_response(content=None, embed=embed)
+        else:
+            embed = discord.Embed(title="⚠️ API Notice", color=0xF1C40F)
+            embed.add_field(name="UID", value=uid, inline=False)
+            embed.add_field(name="Status", value="Invalid JSON or failed to fetch from API.", inline=False)
+            await interaction.edit_original_response(content=None, embed=embed)
+
+    except Exception as e:
+        await interaction.edit_original_response(content=f"❌ Connection Error: `{e}`")
+
+# ==================== Run Flask & Bot ====================
+if __name__ == "__main__":
+    threading.Thread(target=run_flask).start()
+    DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
+    if DISCORD_TOKEN:
+        bot.run(DISCORD_TOKEN.strip())
+    else:
+        print("❌ এরর: DISCORD_TOKEN এনভায়রনমেন্ট ভ্যারিয়েবল সেট করা নেই!")
