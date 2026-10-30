@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Free Fire Player Lookup</title>
+</head>
+<body style="background-color: #121212; color: white; font-family: sans-serif; text-align: center; padding-top: 50px;">
+    <h2>Free Fire UID Checker</h2>
+    <input type="text" id="uidInput" placeholder="Enter Player UID" style="padding: 10px; width: 250px;">
+    <button onclick="checkPlayer()" style="padding: 10px 20px; background: #00FFCC; border: none; cursor: pointer;">Search</button>
+    
+    <div id="result" style="margin-top: 20px;"></div>
+
+    <script>
+        async function checkPlayer() {
+            const uid = document.getElementById('uidInput').value;
+            const resultDiv = document.getElementById('result');
+            if(!uid) {
+                alert("Please enter a valid UID!");
+                return;
+            }
+
+            resultDiv.innerHTML = "Searching...";
+            try {
+                let response = await fetch(`https://auraffxserverinfocheckerapi.onrender.com/api/player?uid=${uid}`);
+                let data = await response.json();
+                
+                resultDiv.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                resultDiv.innerHTML = "Error fetching data!";
+            }
+        }
+    </script>
+</body>
+</html>
