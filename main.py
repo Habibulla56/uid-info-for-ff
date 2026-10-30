@@ -4,14 +4,24 @@ import aiohttp
 import discord
 from discord import app_commands
 from discord.ext import commands
-from flask import Flask
+from flask import Flask, request, jsonify
 
-# ==================== Flask Server for Render Port ====================
+# ==================== Flask Server for Render & Web API ====================
 app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "Free Fire Discord Bot is Alive!"
+    return "Free Fire Discord Bot & API System is Alive!"
+
+# ওয়েবসাইটের জন্য এপিআই রাউট (যাতে অন্য ওয়েবসাইট থেকেও রিকোয়েস্ট করা যায়)
+@app.route('/api/player', methods=['GET'])
+def web_player_api():
+    uid = request.args.get('uid')
+    if not uid:
+        return jsonify({"success": False, "error": "UID is required"})
+    
+    # এখানে তুই তোর এপিআই বা লজিক কানেক্ট করতে পারবি
+    return jsonify({"success": True, "uid": uid, "message": "API is working fine!"})
 
 def run_flask():
     port = int(os.environ.get("PORT", 10000))
@@ -60,7 +70,6 @@ async def player_slash(interaction: discord.Interaction, uid: str):
         if result and isinstance(result, dict):
             data = result.get("data", result)
             
-            # চেক করা যে API আসলেও প্লেয়ারের ডেটা দিয়েছে কি না বা এরর আছে কি না
             if "error" in result or data.get("success") == False or (isinstance(data, dict) and "error" in data):
                 embed = discord.Embed(title="❌ Player Not Found", color=0xFF0000)
                 embed.add_field(name="UID", value=uid, inline=False)
