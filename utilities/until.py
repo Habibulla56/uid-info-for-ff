@@ -1,18 +1,24 @@
-import json
-import os
+# -*- coding: utf-8 -*-
+# Utility functions for encoding and decoding Protocol Buffers
 
-def load_accounts(filepath="accounts.json"):
+def encode_protobuf(message_obj):
     """
-    JSON ফাইল থেকে ফ্রি ফায়ার একাউন্ট এবং সার্ভার ক্রডেনশিয়াল লোড করে।
+    Encodes a protobuf message object into bytes.
     """
-    if not os.path.exists(filepath):
-        print(f"⚠️ সতর্কতা: {filepath} ফাইলটি পাওয়া যায়নি! দয়া করে একটি accounts.json ফাইল তৈরি করুন।")
-        return {}
-    
     try:
-        with open(filepath, "r", encoding="utf-8") as f:
-            accounts = json.load(f)
-            return accounts
+        return message_obj.SerializeToString()
     except Exception as e:
-        print(f"❌ একাউন্ট লোড করতে সমস্যা হয়েছে: {e}")
-        return {}
+        print(f"Error encoding protobuf: {e}")
+        return b""
+
+def decode_protobuf(message_class, byte_data):
+    """
+    Decodes raw bytes into the specified protobuf message class.
+    """
+    try:
+        msg = message_class()
+        msg.ParseFromString(byte_data)
+        return msg
+    except Exception as e:
+        print(f"Error decoding protobuf: {e}")
+        return None
