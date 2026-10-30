@@ -41,8 +41,7 @@ async def player_slash(interaction: discord.Interaction, uid: str):
     await interaction.response.send_message(f"🔍 Fetching live details for UID: `{uid}` ...", ephemeral=True)
     
     target_url = f"https://auraffxserverinfocheckerapi.onrender.com/api/player?uid={uid}"
-    print(f"➡️ Requesting URL: {target_url}") # এটি লগে দেখাবে রিকোয়েস্ট কোথায় যাচ্ছে
-
+    
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     }
@@ -50,49 +49,41 @@ async def player_slash(interaction: discord.Interaction, uid: str):
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(target_url, headers=headers, timeout=15) as resp:
-                print(f"📥 API Status Code: {resp.status}")
                 if resp.status == 200:
                     try:
                         result = await resp.json()
-                        print(f"🔥 RAW API JSON RESPONSE: {result}") # এটি এপিআই-এর আসল ডেটা লগে প্রিন্ট করবে
-                    except Exception as json_err:
-                        print(f"⚠️ JSON Decode Error: {json_err}")
+                    except:
                         result = {"success": False}
                 else:
                     result = {"success": False}
 
         if result and isinstance(result, dict):
-            # এখানে সরাসরি বা data কি-র ভেতর থেকে ডাটা তোলার ব্যবস্থা
+            # চেক করা যে API আসলেও প্লেয়ারের ডেটা দিয়েছে কি না
             data = result.get("data", result)
-            p_name = data.get("player_name", data.get("name", data.get("nickname", data.get("AccountName", "Unknown Player"))))
+            
+            # যদি এপিআই থেকে সরাসরি error বা player না পাওয়ার মেসেজ থাকে
+            if "error" in result or data.get("success") == False or (isinstance(data, dict) and "error" in data):
+                embed = discord.Embed(title="❌ Player Not Found", color=0xFF0000)
+                embed.add_field(name="UID", value=uid, inline=False)
+                embed.add_field(name="Status", value="This UID might be invalid, banned, or not found in the API database.", inline=False)
+                await interaction.edit_original_response(content=None, embed=embed)
+                return
+
+            p_name = data.get("player_name", data.get("name", data.get("nickname", data.get("AccountName"))))
             p_level = data.get("level", data.get("PlayerLevel", data.get("AccountLevel", "N/A")))
             p_likes = data.get("likes", data.get("Likes", data.get("Favorable", "N/A")))
             p_guild = data.get("guild_name", data.get("guild", data.get("GuildName", "None")))
             p_region = data.get("region", data.get("Region", "BD"))
 
+            # যদি নাম না পাওয়া যায়
+            if not p_name or p_name == "Unknown":
+                embed = discord.Embed(title="❌ Player Not Found", color=0xFF0000)
+                embed.add_field(name="UID", value=uid, inline=False)
+                embed.add_field(name="Status", value="Could not retrieve player details for this UID.", inline=False)
+                await interaction.edit_original_response(content=None, embed=embed)
+                return
+
             embed = discord.Embed(title="✅ Free Fire Player Found (API)", color=0x00FFCC)
             embed.add_field(name="UID", value=uid, inline=False)
             embed.add_field(name="Name", value=f"{p_name} (Level: {p_level} - {p_region})", inline=False)
             embed.add_field(name="Likes", value=f"❤️ {p_likes}", inline=False)
-            embed.add_field(name="Guild Name", value=p_guild, inline=False)
-            embed.set_footer(text="AuraFFX API Bot")
-            
-            await interaction.edit_original_response(content=None, embed=embed)
-        else:
-            embed = discord.Embed(title="⚠️ API Notice", color=0xF1C40F)
-            embed.add_field(name="UID", value=uid, inline=False)
-            embed.add_field(name="Status", value="Invalid JSON or failed to fetch from API.", inline=False)
-            await interaction.edit_original_response(content=None, embed=embed)
-
-    except Exception as e:
-        print(f"❌ Error in player command: {e}")
-        await interaction.edit_original_response(content=f"❌ Connection Error: `{e}`")
-
-# ==================== Run Flask & Bot ====================
-if __name__ == "__main__":
-    threading.Thread(target=run_flask).start()
-    DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
-    if DISCORD_TOKEN:
-        bot.run(DISCORD_TOKEN.strip())
-    else:
-        print("❌ এরর: DISCORD_TOKEN এনভায়রনমেন্ট ভ্যারিয়েবল সেট করা নেই!")
