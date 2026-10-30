@@ -1,22 +1,24 @@
 # -*- coding: utf-8 -*-
-# Minimal manual Protobuf definition for MajorLogin to avoid parsing errors
+# Utility functions for encoding and decoding Protocol Buffers
 
-from google.protobuf import message as _message
-from google.protobuf import reflection as _reflection
-from google.protobuf import symbol_database as _symbol_database
+def encode_protobuf(message_obj):
+    """
+    Encodes a protobuf message object into bytes.
+    """
+    try:
+        return message_obj.SerializeToString()
+    except Exception as e:
+        print(f"Error encoding protobuf: {e}")
+        return b""
 
-_sym_db = _symbol_database.Default()
-
-class MajorLoginReq(_message.Message):
-    __slots__ = ["access_token", "uid"]
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-class MajorLoginRes(_message.Message):
-    __slots__ = ["serverUrl", "token", "code"]
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-# Register message classes so they work seamlessly with protobuf serialization/deserialization
-_sym_db.RegisterMessage(MajorLoginReq)
-_sym_db.RegisterMessage(MajorLoginRes)
+def decode_protobuf(message_class, byte_data):
+    """
+    Decodes raw bytes into the specified protobuf message class.
+    """
+    try:
+        msg = message_class()
+        msg.ParseFromString(byte_data)
+        return msg
+    except Exception as e:
+        print(f"Error decoding protobuf: {e}")
+        return None
