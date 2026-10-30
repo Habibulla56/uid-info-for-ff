@@ -1,8 +1,11 @@
 import sys
 import os
 
-# Render এবং লোকাল সার্ভারের জন্য পাথ ফিক্সার
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# প্রজেক্টের রুট ডিরেক্টরি পাইথনের পাথ লিস্টে যোগ করা যাতে সব ফোল্ডার থেকে কোড খুঁজে পায়
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(current_dir)
+sys.path.append(os.path.join(current_dir, 'Api'))
+sys.path.append(os.path.join(current_dir, 'utilities'))
 
 import threading
 import json
@@ -12,8 +15,8 @@ from discord.ext import commands
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 
-# সঠিক পাথ থেকে মডিউলগুলো ইমপোর্ট
-from utilities.until import load_accounts
+# ফোল্ডার যেখানেই থাকুক না কেন, এই পাথ ফিক্সার ঠিকই খুঁজে বের করে নেবে
+from until import load_accounts
 from Account import get_garena_token, get_major_login
 from InGame import get_player_personal_show, get_player_stats, search_account_by_keyword
 
