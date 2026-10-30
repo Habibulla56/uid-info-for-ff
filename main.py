@@ -1,7 +1,7 @@
 import sys
 import os
 
-# Render এবং লোকাল সার্ভার এর জন্য পাথ ফিক্সার
+# Render এবং লোকাল সার্ভারের জন্য পাথ ফিক্সার
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 import threading
@@ -12,8 +12,8 @@ from discord.ext import commands
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 
-# সরাসরি মূল ফোল্ডার থেকে মডিউলগুলো ইমপোর্ট
-from until import load_accounts
+# সঠিক পাথ থেকে মডিউলগুলো ইমপোর্ট
+from utilities.until import load_accounts
 from Account import get_garena_token, get_major_login
 from InGame import get_player_personal_show, get_player_stats, search_account_by_keyword
 
