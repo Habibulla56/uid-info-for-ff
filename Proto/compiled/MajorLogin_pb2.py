@@ -25,34 +25,27 @@ _MAJORLOGINREQ = _descriptor.Descriptor(
   full_name='MajorLoginReq',
   filename=None,
   file=DESCRIPTOR,
-  containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
       name='access_token', full_name='MajorLoginReq.access_token', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
+      message_type=None, enum_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='uid', full_name='MajorLoginReq.uid', index=1,
       number=2, type=3, cpp_type=2, label=1,
       has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
+      message_type=None, enum_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
   ],
-  extensions=[
-  ],
+  extensions=[],
   is_extension=False,
-  lookup_type=[],
-  containing_type=None,
-  serialized_options=None,
-  is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
-  oneofs=[
-  ],
+  oneofs=[],
   serialized_start=20,
   serialized_end=67,
 )
@@ -62,41 +55,34 @@ _MAJORLOGINRES = _descriptor.Descriptor(
   full_name='MajorLoginRes',
   filename=None,
   file=DESCRIPTOR,
-  containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
       name='serverUrl', full_name='MajorLoginRes.serverUrl', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
+      message_type=None, enum_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='token', full_name='MajorLoginRes.token', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
+      message_type=None, enum_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='code', full_name='MajorLoginRes.code', index=2,
       number=3, type=5, cpp_type=4, label=1,
       has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
+      message_type=None, enum_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
   ],
-  extensions=[
-  ],
+  extensions=[],
   is_extension=False,
-  lookup_type=[],
-  containing_type=None,
-  serialized_options=None,
-  is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
-  oneofs=[
-  ],
+  oneofs=[],
   serialized_start=69,
   serialized_end=123,
 )
@@ -105,14 +91,14 @@ DESCRIPTOR.message_types_by_name['MajorLoginReq'] = _MAJORLOGINREQ
 DESCRIPTOR.message_types_by_name['MajorLoginRes'] = _MAJORLOGINRES
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
-MajorLoginReq = _reflection.GeneratedProtocolMessageType('MajorLoginReq', (_message.Message,), dict(
-    DESCRIPTOR = _MAJORLOGINREQ,
-    __module__ = 'MajorLogin_pb2'
-))
+MajorLoginReq = _reflection.GeneratedProtocolMessageType('MajorLoginReq', (_message.Message,), {
+    'DESCRIPTOR' : _MAJORLOGINREQ,
+    '__module__' : 'MajorLogin_pb2'
+})
 _sym_db.RegisterMessage(MajorLoginReq)
 
-MajorLoginRes = _reflection.GeneratedProtocolMessageType('MajorLoginRes', (_message.Message,), dict(
-    DESCRIPTOR = _MAJORLOGINRES,
-    __module__ = 'MajorLogin_pb2'
-))
+MajorLoginRes = _reflection.GeneratedProtocolMessageType('MajorLoginRes', (_message.Message,), {
+    'DESCRIPTOR' : _MAJORLOGINRES,
+    '__module__' : 'MajorLogin_pb2'
+})
 _sym_db.RegisterMessage(MajorLoginRes)
