@@ -1,4 +1,9 @@
+import sys
 import os
+
+# Render এবং লোকাল সার্ভারের জন্য পাইথন পাথ ফিক্সার
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 import threading
 import json
 import discord
@@ -37,9 +42,8 @@ def get_account_info():
             return jsonify({"status": "error", "message": "Valid numeric UID is required"}), 400
 
         if server not in accounts:
-            server = list(accounts.keys())[0]  # ডিফল্ট সার্ভারFallback
+            server = list(accounts.keys())[0]
 
-        # Garena Token & Major Login
         garena_token_result = get_garena_token(accounts[server]['uid'], accounts[server]['password'])
         if not garena_token_result or 'access_token' not in garena_token_result:
             return jsonify({"status": "error", "message": "Garena Authentication Failed"}), 401
@@ -48,7 +52,6 @@ def get_account_info():
         if not major_login_result or 'token' not in major_login_result:
             return jsonify({"status": "error", "message": "Major Login Failed"}), 401
 
-        # Player Personal Show Data Fetch
         player_data = get_player_personal_show(
             major_login_result["serverUrl"], 
             major_login_result["token"], 
@@ -96,10 +99,9 @@ async def player_slash(interaction: discord.Interaction, uid: str, server: str =
     
     server = server.upper()
     if server not in accounts:
-        server = "BD" # ডিফল্ট
+        server = "BD"
 
     try:
-        # সরাসরি পাইথন ফাংশন কল করে রিয়েল ডাটা ফেচ করা (খুব দ্রুত কাজ করবে)
         garena_token_result = get_garena_token(accounts[server]['uid'], accounts[server]['password'])
         if not garena_token_result or 'access_token' not in garena_token_result:
             await interaction.edit_original_response(content="❌ Garena Authentication Failed inside Bot!")
@@ -124,8 +126,6 @@ async def player_slash(interaction: discord.Interaction, uid: str, server: str =
             await interaction.edit_original_response(content=None, embed=embed)
             return
 
-        # ডাটা থেকে প্রয়োজনীয় ফিল্ডগুলো এক্সট্রাক্ট করা (প্রোটোবাফ স্ট্রাকচার অনুযায়ী)
-        # তোর ডেটা ফরম্যাট অনুযায়ী এখানে ফিল্ডের নাম অ্যাডজাস্ট করে নিতে পারবি
         account_info = player_data.get("accountInfo", player_data.get("basic_info", player_data))
         
         p_name = account_info.get("accountName", account_info.get("name", "Unknown"))
@@ -134,7 +134,6 @@ async def player_slash(interaction: discord.Interaction, uid: str, server: str =
         p_guild = account_info.get("guildInfo", {}).get("guildName", account_info.get("guild_name", "None"))
         p_region = server
 
-        # ডিসকর্ড সুন্দর এম্বেড কার্ড তৈরি
         embed = discord.Embed(title="🎮 Free Fire Full Profile Stats", color=0x00FFCC)
         embed.add_field(name="👤 Player Name", value=str(p_name), inline=True)
         embed.add_field(name="🆔 UID", value=str(uid), inline=True)
@@ -151,7 +150,6 @@ async def player_slash(interaction: discord.Interaction, uid: str, server: str =
 
 # ==================== Run Flask & Bot Concurrently ====================
 if __name__ == "__main__":
-    # ফ্লাস্ক সার্ভার ব্যাকগ্রাউন্ড থ্রেডে রান করবে (Render Port Binding এর জন্য জরুরি)
     threading.Thread(target=run_flask, daemon=True).start()
     
     DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
