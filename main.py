@@ -1,24 +1,71 @@
 import os
 import threading
-import aiohttp
+import json
 import discord
 from discord import app_commands
 from discord.ext import commands
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 
-# ==================== Flask Server for Render ====================
+# ব্যাকএন্ড মডিউলগুলো ইমপোর্ট
+from Utilities.until import load_accounts
+from Api.Account import get_garena_token, get_major_login
+from Api.InGame import get_player_personal_show, get_player_stats, search_account_by_keyword
+
+# একাউন্ট লোড করা
+accounts = load_accounts()
+
+# ==================== Flask App & API Routes ====================
 app = Flask(__name__)
+CORS(app)
 
 @app.route('/')
 def home():
-    return "Free Fire Discord Bot & Profile Stats API is Alive!"
+    return "Free Fire Bot & Full Stats API is Alive!"
 
-@app.route('/api/player', methods=['GET'])
-def web_player_api():
-    uid = request.args.get('uid')
-    if not uid:
-        return jsonify({"success": False, "error": "UID is required"})
-    return jsonify({"success": True, "uid": uid, "status": "API Endpoint Active"})
+@app.route('/get_player_personal_show', methods=['GET'])
+def get_account_info():
+    try:
+        server = request.args.get('server', 'BD').upper()
+        uid = request.args.get('uid')
+        need_gallery_info = request.args.get('need_gallery_info', False)
+        need_blacklist = request.args.get('need_blacklist', False)
+        need_spark_info = request.args.get('need_spark_info', False)
+        call_sign_src = request.args.get('call_sign_src', 7)
+        
+        if not uid or not uid.isdigit():
+            return jsonify({"status": "error", "message": "Valid numeric UID is required"}), 400
+
+        if server not in accounts:
+            server = list(accounts.keys())[0]  # ডিফল্ট সার্ভারFallback
+
+        # Garena Token & Major Login
+        garena_token_result = get_garena_token(accounts[server]['uid'], accounts[server]['password'])
+        if not garena_token_result or 'access_token' not in garena_token_result:
+            return jsonify({"status": "error", "message": "Garena Authentication Failed"}), 401
+
+        major_login_result = get_major_login(garena_token_result["access_token"], garena_token_result["open_id"])
+        if not major_login_result or 'token' not in major_login_result:
+            return jsonify({"status": "error", "message": "Major Login Failed"}), 401
+
+        # Player Personal Show Data Fetch
+        player_data = get_player_personal_show(
+            major_login_result["serverUrl"], 
+            major_login_result["token"], 
+            int(uid), 
+            bool(need_gallery_info), 
+            int(call_sign_src),
+            bool(need_blacklist), 
+            bool(need_spark_info)
+        )
+        
+        if not player_data:
+            return jsonify({"status": "error", "message": f"No player data found for UID: {uid}"}), 404
+        
+        return jsonify(player_data), 200, {'Content-Type': 'application/json; charset=utf-8'}
+    
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 def run_flask():
     port = int(os.environ.get("PORT", 10000))
@@ -41,85 +88,72 @@ async def on_ready():
     except Exception as e:
         print(f"⚠️ কমান্ড সিন্স করতে সমস্যা হয়েছে: {e}")
 
-# ==================== PLAYER LOOKUP COMMAND ====================
-@bot.tree.command(name="player", description="Check Free Fire Profile Stats and Account Info")
-@app_commands.describe(uid="Player UID")
-async def player_slash(interaction: discord.Interaction, uid: str):
-    await interaction.response.send_message(f"🔍 Fetching details for UID: `{uid}` ...", ephemeral=True)
+# ==================== DISCORD PLAYER COMMAND ====================
+@bot.tree.command(name="player", description="Check Free Fire Full Profile Stats via Custom Backend")
+@app_commands.describe(uid="Player UID", server="Server Region (e.g., BD, IND)")
+async def player_slash(interaction: discord.Interaction, uid: str, server: str = "BD"):
+    await interaction.response.send_message(f"🔍 Fetching full profile details for UID: `{uid}` ...", ephemeral=True)
     
-    target_url = f"https://auraffxserverinfocheckerapi.onrender.com/api/player?uid={uid}"
-    
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    }
+    server = server.upper()
+    if server not in accounts:
+        server = "BD" # ডিফল্ট
 
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(target_url, headers=headers, timeout=15) as resp:
-                if resp.status == 200:
-                    try:
-                        result = await resp.json()
-                    except:
-                        result = {"success": False}
-                else:
-                    result = {"success": False}
+        # সরাসরি পাইথন ফাংশন কল করে রিয়েল ডাটা ফেচ করা (খুব দ্রুত কাজ করবে)
+        garena_token_result = get_garena_token(accounts[server]['uid'], accounts[server]['password'])
+        if not garena_token_result or 'access_token' not in garena_token_result:
+            await interaction.edit_original_response(content="❌ Garena Authentication Failed inside Bot!")
+            return
 
-        if result and isinstance(result, dict):
-            data = result.get("data", result)
-            
-            # এরর চেক
-            if "error" in result or data.get("success") == False or (isinstance(data, dict) and "error" in data):
-                embed = discord.Embed(title="❌ Profile Not Found", color=0xFF0000)
-                embed.add_field(name="UID", value=uid, inline=False)
-                embed.add_field(name="Status", value="This UID is invalid, banned, or not found in the database.", inline=False)
-                await interaction.edit_original_response(content=None, embed=embed)
-                return
+        major_login_result = get_major_login(garena_token_result["access_token"], garena_token_result["open_id"])
+        if not major_login_result or 'token' not in major_login_result:
+            await interaction.edit_original_response(content="❌ Major Login Failed inside Bot!")
+            return
 
-            # ডাটা এক্সট্রাকশন (নিরাপদভাবে ডিকশনারি ফিল্ড চেক)
-            p_name = data.get("player_name", data.get("name", data.get("nickname", data.get("AccountName"))))
-            p_level = data.get("level", data.get("PlayerLevel", data.get("AccountLevel", "N/A")))
-            p_likes = data.get("likes", data.get("Likes", data.get("Favorable", "N/A")))
-            p_guild = data.get("guild_name", data.get("guild", data.get("GuildName", "None")))
-            p_region = data.get("region", data.get("Region", "BD"))
-            
-            # এক্সট্রা গেম স্ট্যাটস (এপিআই সাপোর্ট করলে দেখাবে, না থাকলে N/A দেখাবে)
-            p_br_rank = data.get("br_rank", data.get("BRRank", data.get("rank", "N/A")))
-            p_cs_rank = data.get("cs_rank", data.get("CSRank", "N/A"))
-            p_create_date = data.get("create_time", data.get("AccountCreateTime", data.get("creation_date", "N/A")))
+        player_data = get_player_personal_show(
+            major_login_result["serverUrl"], 
+            major_login_result["token"], 
+            int(uid), 
+            False, 7, False, False
+        )
 
-            if not p_name or p_name == "Unknown":
-                embed = discord.Embed(title="❌ Profile Not Found", color=0xFF0000)
-                embed.add_field(name="UID", value=uid, inline=False)
-                embed.add_field(name="Status", value="Could not retrieve profile stats for this UID.", inline=False)
-                await interaction.edit_original_response(content=None, embed=embed)
-                return
-
-            # ডিসকর্ড এম্বেড রেসপন্স
-            embed = discord.Embed(title="🎮 Free Fire Player Profile Stats", color=0x00FFCC)
-            embed.add_field(name="👤 Player Name", value=str(p_name), inline=True)
-            embed.add_field(name="🆔 UID", value=str(uid), inline=True)
-            embed.add_field(name="⭐ Level", value=str(p_level), inline=True)
-            embed.add_field(name="🌍 Region", value=str(p_region), inline=True)
-            embed.add_field(name="❤️ Likes", value=str(p_likes), inline=True)
-            embed.add_field(name="🛡️ Guild Name", value=str(p_guild), inline=True)
-            embed.add_field(name="🏆 BR Rank", value=str(p_br_rank), inline=True)
-            embed.add_field(name="⚔️ CS Rank", value=str(p_cs_rank), inline=True)
-            embed.add_field(name="📅 Creation Date", value=str(p_create_date), inline=False)
-            embed.set_footer(text="AuraFFX Profile Bot • Powered by Custom API")
-            
-            await interaction.edit_original_response(content=None, embed=embed)
-        else:
-            embed = discord.Embed(title="⚠️ API Notice", color=0xF1C40F)
+        if not player_data:
+            embed = discord.Embed(title="❌ Profile Not Found", color=0xFF0000)
             embed.add_field(name="UID", value=uid, inline=False)
-            embed.add_field(name="Status", value="Failed to fetch profile data from API server.", inline=False)
+            embed.add_field(name="Status", value="Could not retrieve profile stats for this UID from game server.", inline=False)
             await interaction.edit_original_response(content=None, embed=embed)
+            return
+
+        # ডাটা থেকে প্রয়োজনীয় ফিল্ডগুলো এক্সট্রাক্ট করা (প্রোটোবাফ স্ট্রাকচার অনুযায়ী)
+        # তোর ডেটা ফরম্যাট অনুযায়ী এখানে ফিল্ডের নাম অ্যাডজাস্ট করে নিতে পারবি
+        account_info = player_data.get("accountInfo", player_data.get("basic_info", player_data))
+        
+        p_name = account_info.get("accountName", account_info.get("name", "Unknown"))
+        p_level = account_info.get("accountLevel", account_info.get("level", "N/A"))
+        p_likes = account_info.get("favorable", account_info.get("likes", "N/A"))
+        p_guild = account_info.get("guildInfo", {}).get("guildName", account_info.get("guild_name", "None"))
+        p_region = server
+
+        # ডিসকর্ড সুন্দর এম্বেড কার্ড তৈরি
+        embed = discord.Embed(title="🎮 Free Fire Full Profile Stats", color=0x00FFCC)
+        embed.add_field(name="👤 Player Name", value=str(p_name), inline=True)
+        embed.add_field(name="🆔 UID", value=str(uid), inline=True)
+        embed.add_field(name="⭐ Level", value=str(p_level), inline=True)
+        embed.add_field(name="🌍 Region", value=str(p_region), inline=True)
+        embed.add_field(name="❤️ Likes", value=str(p_likes), inline=True)
+        embed.add_field(name="🛡️ Guild Name", value=str(p_guild), inline=True)
+        embed.set_footer(text="AuraFFX Custom Protobuf Bot • Powered by Flask Backend")
+        
+        await interaction.edit_original_response(content=None, embed=embed)
 
     except Exception as e:
-        await interaction.edit_original_response(content=f"❌ Connection Error: `{e}`")
+        await interaction.edit_original_response(content=f"❌ Error fetching player info: `{e}`")
 
-# ==================== Run Flask & Bot ====================
+# ==================== Run Flask & Bot Concurrently ====================
 if __name__ == "__main__":
-    threading.Thread(target=run_flask).start()
+    # ফ্লাস্ক সার্ভার ব্যাকগ্রাউন্ড থ্রেডে রান করবে (Render Port Binding এর জন্য জরুরি)
+    threading.Thread(target=run_flask, daemon=True).start()
+    
     DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
     if DISCORD_TOKEN:
         bot.run(DISCORD_TOKEN.strip())
